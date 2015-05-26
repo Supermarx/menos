@@ -42,7 +42,6 @@ namespace supermarx
 			std::string identifier, name;
 			boost::optional<std::string> image_uri;
 			boost::optional<size_t> price;
-			boost::optional<size_t> old_price;
 			boost::optional<std::string> caliber;
 			boost::optional<std::string> discount;
 
@@ -65,25 +64,32 @@ namespace supermarx
 			std::stringstream sstr;
 			sstr << "Unclear '" << field << "' with value '" << value << "'";
 
+			std::cerr << "problem: " << sstr.str() << std::endl;
 			current_p.problems.emplace_back(sstr.str());
 		}
 
 		void interpret_caliber(std::string unit, uint64_t& volume, measure& volume_measure)
 		{
-			static const boost::regex match_split("([^\\d]+) (.+)");
-			static const boost::regex match_measure("([0-9]+(?:\\.[0-9]+)?)[\\s]+(.+)");
 			boost::smatch what;
+			static const boost::regex match_prefix("Per (?:[a-z]+ )?(.+)");
+			static const boost::regex match_measure("([0-9]+(?:\\.[0-9]+)?)[\\s]+(.+)");
 
-			if(boost::regex_match(unit, what, match_split))
-				unit = what[2];
+			if(boost::regex_match(unit, what, match_prefix))
+				unit = what[1];
 
-			std::transform(unit.begin(), unit.end(), unit.begin(), ::tolower);
+			boost::erase_all(unit, ".");
 
 			if(boost::regex_match(unit, what, match_measure))
 			{
 				std::string measure_type = what[2];
 
-				if(measure_type == "stuk" || measure_type == "stuks")
+				const static std::set<std::string> generic_types({{
+					"stuk", "stuks",
+					"pak", "bus", "rol", "vel", "doos", "blik", "paar", "fles",
+					"zak", "bord"
+				}});
+
+				if(generic_types.find(measure_type) != generic_types.end())
 				{
 					volume = boost::lexical_cast<float>(what[1]);
 					volume_measure = measure::UNITS;
@@ -139,40 +145,38 @@ namespace supermarx
 
 		void interpret_discount(std::string discount_str, uint64_t& price, uint64_t& discount_amount)
 		{
-			static const boost::regex match_percent_discount("([0-9]+)% korting");
-			static const boost::regex match_combination_discount("([0-9]+) voor € ([0-9]+\\.[0-9]+)");
-			static const boost::regex match_per("€ ([0-9]+\\.[0-9]+) per (.+)");
+			static const boost::regex match_percent_discount("([0-9]+)%KORTING");
+			static const boost::regex match_new_price("([0-9]+)");
 			boost::smatch what;
 
-			if(discount_str == "Prijs verlaagd")
-			{
-				// Do nothing
-			}
-			else if(boost::regex_match(discount_str, what, match_percent_discount))
+			if(boost::regex_match(discount_str, what, match_percent_discount))
 			{
 				price *= 1.0 - boost::lexical_cast<float>(what[1])/100.0;
 			}
-			else if(boost::regex_match(discount_str, what, match_combination_discount))
+			else if(boost::regex_match(discount_str, what, match_new_price))
 			{
-				discount_amount = boost::lexical_cast<uint64_t>(what[1]);
-				price = boost::lexical_cast<float>(what[2])*100.0;
+				price = boost::lexical_cast<uint64_t>(what[1]);
 			}
-			else if(discount_str == "2e halve prijs")
+			else if(discount_str == "2eHALVEPRIJS")
 			{
 				discount_amount = 2;
 				price = price * 0.75;
 			}
-			else if(discount_str == "1 + 1 gratis" || discount_str == "2 halen, 1 betalen")
+			else if(discount_str == "1+1GRATIS")
 			{
 				discount_amount = 2;
 				price = price * 0.5;
 			}
-			else if(discount_str == "2 + 1 gratis")
+			else if(discount_str == "1+2GRATIS")
+			{
+				discount_amount = 3;
+				price = price / 3;
+			}
+			else if(discount_str == "2+1GRATIS")
 			{
 				discount_amount = 3;
 				price = (price * 2) / 3;
 			}
-			//else if(boost::regex_match(discount_str, what, match_per)) // TODO
 			else
 			{
 				report_problem_understanding("discount_str", discount_str);
@@ -196,9 +200,6 @@ namespace supermarx
 
 			uint64_t orig_price = *current_p.price;
 			uint64_t price = orig_price;
-
-			if(current_p.old_price)
-				orig_price = *current_p.old_price;
 
 			uint64_t discount_amount = 1;
 
@@ -287,12 +288,19 @@ namespace supermarx
 							current_p.name = util::sanitize(ch);
 						});
 				}
-				else if(util::contains_attr("thumb-img", att_class))
+				else if(util::contains_attr("ish-productTile-withCartButton-photo", att_class))
 				{
 					state = S_PRODUCT_IMAGE;
 					wc.add([&]() {
 						state = S_PRODUCT;
 					});
+				}
+				if(util::contains_attr("shape-tekst", att_class))
+				{
+					rec = html_recorder(
+						[&](std::string ch) {
+							current_p.discount = util::sanitize(ch);
+						});
 				}
 				else if(util::contains_attr("product-tile-priceContainer", att_class))
 				{
@@ -308,28 +316,7 @@ namespace supermarx
 							current_p.price = boost::lexical_cast<size_t>(what[1]) * 100 + boost::lexical_cast<size_t>(what[2]);
 						});
 				}
-				else if(qName == "span" && util::contains_attr("old-price", att_class))
-				{
-					rec = html_recorder(
-						[&](std::string ch) {
-							static const boost::regex match_old_price("[^0-9]+([0-9]+),([0-9]+)"); // old-price contains extra white-space
-							boost::smatch what;
-
-							std::string ch_san(util::sanitize(ch));
-							if(!boost::regex_match(ch_san, what, match_old_price))
-								throw std::runtime_error("Malformed old-price '" + ch_san + "'");
-
-							current_p.old_price = boost::lexical_cast<size_t>(what[1]) * 100 + boost::lexical_cast<size_t>(what[2]);
-						});
-				}
-				else if(qName == "span" && util::contains_attr("discount", att_class))
-				{
-					rec = html_recorder(
-						[&](std::string ch) {
-							current_p.discount = util::sanitize(ch);
-						});
-				}
-				else if(qName == "span" && util::contains_attr("caliber", att_class))
+				else if(util::contains_attr("content-weight-or-per-piece", att_class))
 				{
 					rec = html_recorder(
 						[&](std::string ch) {
@@ -340,14 +327,17 @@ namespace supermarx
 			case S_PRODUCT_IMAGE:
 				if(qName == "img")
 				{
-					static const boost::regex match_img("(.*)/small_image/135x/(.*)");
+					static const boost::regex match_img("(.*)/M/(.*)");
 					boost::smatch what;
 
-					std::string src(atts.getValue("src"));
+					std::string src(atts.getValue("data-src"));
+					if(src == "") // No image available
+						break;
+
 					if(!boost::regex_match(src, what, match_img))
 						throw std::runtime_error("Malformed image uri '" + src + "'");
 
-					current_p.image_uri = what[1] + "/image/" + what[2];
+					current_p.image_uri = what[1] + "/L/" + what[2];
 				}
 			break;
 			}

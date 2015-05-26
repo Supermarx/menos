@@ -49,12 +49,16 @@ namespace supermarx
 			product_parser pp([&](const product& p, boost::optional<std::string> const& _image_uri, datetime retrieved_on, confidence conf, problems_t probs)
 			{
 				++product_i;
-				callback(_curi, _image_uri, p, retrieved_on, conf, probs);
+
+				boost::optional<std::string> image_uri;
+				if(_image_uri)
+					image_uri = "http://www.plus.nl/" + *_image_uri;
+
+				callback(_curi, image_uri, p, retrieved_on, conf, probs);
 			});
 
 			std::string cat_src(dl.fetch(_curi + "?PageSize=100000"));
 
-			std::cerr << _curi << std::endl;
 			pp.parse(cat_src);
 
 			if(product_i == 0) // If no products, add _curi to stack to expand tree deeper
