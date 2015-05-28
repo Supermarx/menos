@@ -57,7 +57,9 @@ namespace supermarx
 				callback(_curi, image_uri, p, retrieved_on, conf, probs);
 			});
 
-			std::string cat_src(dl.fetch(_curi + "?PageSize=100000"));
+			std::string cat_src(stubborn::attempt<std::string>([&](){
+				return dl.fetch(_curi + "?PageSize=100000");
+			}));
 
 			pp.parse(cat_src);
 
