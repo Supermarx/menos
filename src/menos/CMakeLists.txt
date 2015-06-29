@@ -1,4 +1,4 @@
-project(meno)
+project(menos)
 
 find_package(yaml-cpp REQUIRED)
 find_package(Boost COMPONENTS system program_options regex locale date_time filesystem REQUIRED)
