@@ -30,7 +30,7 @@ namespace supermarx
 			todo.push(_curi);
 		});
 
-		add_f("http://www.plus.nl/assortiment");
+		add_f("https://www.plus.nl/assortiment");
 
 		category_parser cp([&](category_parser::category_uri_t const& _curi)
 		{
@@ -52,7 +52,7 @@ namespace supermarx
 
 				boost::optional<std::string> image_uri;
 				if(_image_uri)
-					image_uri = "http://www.plus.nl/" + *_image_uri;
+					image_uri = "https://www.plus.nl/" + *_image_uri;
 
 				callback(_curi, image_uri, p, retrieved_on, conf, probs);
 			});
