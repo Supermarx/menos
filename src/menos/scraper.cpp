@@ -58,7 +58,7 @@ namespace supermarx
 			});
 
 			std::string cat_src(stubborn::attempt<std::string>([&](){
-				return dl.fetch(_curi + "?PageSize=100000");
+				return dl.fetch(_curi + "?PageSize=100000").body;
 			}));
 
 			pp.parse(cat_src);
@@ -70,7 +70,7 @@ namespace supermarx
 
 	raw scraper::download_image(const std::string& uri)
 	{
-		std::string buf(dl.fetch(uri));
+		std::string buf(dl.fetch(uri).body);
 		return raw(buf.data(), buf.length());
 	}
 }
