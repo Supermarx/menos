@@ -12,7 +12,7 @@
 
 namespace supermarx
 {
-	scraper::scraper(callback_t _callback, size_t _ratelimit, bool _cache)
+	scraper::scraper(callback_t _callback, size_t _ratelimit, bool _cache, bool)
 	: callback(_callback)
 	, dl("supermarx menos/1.0", _ratelimit, _cache ? boost::optional<std::string>("./cache") : boost::none)
 	{}
@@ -54,7 +54,7 @@ namespace supermarx
 				if(_image_uri)
 					image_uri = "https://www.plus.nl/" + *_image_uri;
 
-				callback(_curi, image_uri, p, retrieved_on, conf, probs);
+				callback(_curi, image_uri, p, {}, retrieved_on, conf, probs);
 			});
 
 			std::string cat_src(stubborn::attempt<std::string>([&](){
