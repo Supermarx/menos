@@ -114,7 +114,7 @@ namespace supermarx
 				}
 				else if(measure_type == "cl" || measure_type == "centilliter")
 				{
-					volume = boost::lexical_cast<float>(what[1])*100.0;
+					volume = boost::lexical_cast<float>(what[1])*10.0;
 					volume_measure = measure::MILLILITERS;
 				}
 				else if(measure_type == "l" || measure_type == "lt" || measure_type == "liter" || measure_type == "litre")
