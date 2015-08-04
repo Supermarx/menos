@@ -110,22 +110,22 @@ namespace supermarx
 				else if(measure_type == "ml" || measure_type == "milliliter")
 				{
 					volume = boost::lexical_cast<float>(what[1]);
-					volume_measure = measure::MILLILITERS;
+					volume_measure = measure::MILLILITRES;
 				}
 				else if(measure_type == "cl" || measure_type == "centilliter")
 				{
 					volume = boost::lexical_cast<float>(what[1])*10.0;
-					volume_measure = measure::MILLILITERS;
+					volume_measure = measure::MILLILITRES;
 				}
 				else if(measure_type == "l" || measure_type == "lt" || measure_type == "liter" || measure_type == "litre")
 				{
 					volume = boost::lexical_cast<float>(what[1])*1000.0;
-					volume_measure = measure::MILLILITERS;
+					volume_measure = measure::MILLILITRES;
 				}
 				else if(measure_type == "meter")
 				{
 					volume = boost::lexical_cast<float>(what[1])*1000.0;
-					volume_measure = measure::MILLIMETERS;
+					volume_measure = measure::MILLIMETRES;
 				}
 				else
 				{
