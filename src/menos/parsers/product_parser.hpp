@@ -165,17 +165,17 @@ namespace supermarx
 				discount_amount = 2;
 				price = price * 0.5;
 			}
-			else if(discount_str == "1+2GRATIS")
+			else if(discount_str == "1+2GRATIS" || discount_str == "1+2")
 			{
 				discount_amount = 3;
 				price = price / 3;
 			}
-			else if(discount_str == "2+1GRATIS")
+			else if(discount_str == "2+1GRATIS" || discount_str == "2+1")
 			{
 				discount_amount = 3;
 				price = (price * 2) / 3;
 			}
-			else if(discount_str == "3+1GRATIS")
+			else if(discount_str == "3+1GRATIS" || discount_str == "3+1")
 			{
 				discount_amount = 4;
 				price = price * 0.75;
