@@ -2,6 +2,7 @@
 
 #include <supermarx/raw.hpp>
 #include <supermarx/util/cached_downloader.hpp>
+#include <supermarx/util/download_manager.hpp>
 
 #include <supermarx/scraper/scraper_prototype.hpp>
 
@@ -17,6 +18,9 @@ namespace supermarx
 	private:
 		product_callback_t product_callback;
 		cached_downloader dl;
+		download_manager m;
+
+		size_t product_count, page_count, error_count;
 
 	public:
 		scraper(product_callback_t _product_callback, tag_hierarchy_callback_t _tag_hierarchy_callback, size_t ratelimit, bool cache = false, bool register_tags = false);
